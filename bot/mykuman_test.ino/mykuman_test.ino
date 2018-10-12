@@ -11,6 +11,8 @@ int INPUT4 = 13;
 int Echo = A5;
 int Trig = A4;
 float distance;
+float lDistance;
+float rDistance;
 
 Servo servo1;
 Servo servo2;
@@ -41,8 +43,8 @@ void setup() {
   pinMode(INPUT2,OUTPUT); 
   pinMode(INPUT3,OUTPUT); 
   pinMode(INPUT4,OUTPUT);
-  analogWrite(ENB,64);
-  analogWrite(ENA,64);
+  analogWrite(ENB,128);
+  analogWrite(ENA,128);
 
   pinMode(Echo,INPUT);
   pinMode(Trig,OUTPUT);
@@ -60,49 +62,69 @@ void setup() {
   headUp();
   delay(1000);
   headStraight();
+
+  // READING DISTANCE A FEW TIMES TO GET LATER MORE ACCURATE MEASUREMENTS
+  getDistance();
+  getDistance();
+  getDistance();
+  getDistance();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-
   
-  if ( chronoGetDistance.hasPassed(125) ) { //returns true if it passed 125 ms since it was started
-    getDistance();
-  }
-
-  if ( chronoMoveHead.hasPassed(250) ) { //returns true if it passed 250 ms since it was started
+  getDistance();  
+  
+  if ( distance <= 25 ) {
+    MOTOR_GO_STOP;
+    delay(100);
+    MOTOR_GO_BACK;
+    delay(400);
+    MOTOR_GO_STOP;
     headLeft();
     headRight();
-  }
-
-  
-  if ( chronoMove.hasPassed(500) ) { //returns true if it passed 500 ms since it was started
-    if(distance > 40) {
-      MOTOR_GO_FORWARD;
-    } else {    
-      HEAD_CENTER;
-      MOTOR_GO_STOP;
-      delay(1000);
+    HEAD_CENTER;
+    getDistance();
+    if ( lDistance >= rDistance && lDistance > distance) {
       MOTOR_GO_LEFT;
-      delay(500);
+      delay(400);
+      MOTOR_GO_STOP;
+    } else if ( rDistance >= lDistance && rDistance > distance) {
+      MOTOR_GO_RIGHT;
+      delay(400);
+      MOTOR_GO_STOP;
+    } else {
+      MOTOR_GO_FORWARD;
     }
-  }
+  } else {
+    MOTOR_GO_FORWARD;
+  }  
   
 }
 
 void headLeft() {
   for (pos = hAngle; pos <= 180; pos ++) { 
-    servo1.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(3);                       // waits 3ms for the servo to reach the position
-    hAngle = pos;    
+    servo1.write(pos);              // tell servo to go to position in variable 'pos'    
+    hAngle = pos;   
+    if ( pos == 180 ) {
+      lDistance = getDistance();
+      delay(200);      
+    } else {
+      delay(3);
+    }
   }
 }
 
 void headRight() {
   for (pos = hAngle; pos >= 0; pos --) { 
-    servo1.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(3);                       // waits 3ms for the servo to reach the position
+    servo1.write(pos);              // tell servo to go to position in variable 'pos'    
     hAngle = pos;
+    if ( pos == 0 ) {
+      rDistance = getDistance();
+      delay(200);
+    } else {
+      delay(3);
+    }
   }
 }
 
@@ -135,8 +157,5 @@ char getDistance() {
     digitalWrite(Trig, LOW);
     distance = pulseIn(Echo, HIGH);
     distance = distance/5.8/10;
-    //Serial.println(distance);
-    return distance;
-    
+    return distance;    
 }
-
