@@ -59,7 +59,7 @@ void setup() {
   headRight();
   delay(500);
   HEAD_CENTER;
-  headUp();
+  //headUp();
   delay(1000);
   headStraight();
 
@@ -77,19 +77,34 @@ void loop() {
   
   if ( distance <= 25 ) {
     MOTOR_GO_STOP;
-    delay(100);
-    MOTOR_GO_BACK;
-    delay(400);
-    MOTOR_GO_STOP;
+    delay(100);    
     headLeft();
     headRight();
     HEAD_CENTER;
-    getDistance();
-    if ( lDistance >= rDistance && lDistance > distance) {
+    // beat inertia and stop faster
+    MOTOR_GO_BACK;
+    delay(50);
+    MOTOR_GO_STOP;
+    /*if ( lDistance > rDistance ) {
       MOTOR_GO_LEFT;
       delay(400);
       MOTOR_GO_STOP;
-    } else if ( rDistance >= lDistance && rDistance > distance) {
+    } else {
+      MOTOR_GO_RIGHT;
+      delay(400);
+      MOTOR_GO_STOP;
+    }*/
+    if ( lDistance >= rDistance && lDistance >= getDistance() ) {
+      MOTOR_GO_BACK;
+      delay(400);
+      MOTOR_GO_STOP;
+      MOTOR_GO_LEFT;
+      delay(400);
+      MOTOR_GO_STOP;
+    } else if ( rDistance >= lDistance && rDistance >= getDistance() ) {
+      MOTOR_GO_BACK;
+      delay(400);
+      MOTOR_GO_STOP;
       MOTOR_GO_RIGHT;
       delay(400);
       MOTOR_GO_STOP;
@@ -103,28 +118,32 @@ void loop() {
 }
 
 void headLeft() {
+  lDistance = 1000000; //arbitrary big number
+  float clDistance = 1000000; //arbitrary big number
   for (pos = hAngle; pos <= 180; pos ++) { 
     servo1.write(pos);              // tell servo to go to position in variable 'pos'    
     hAngle = pos;   
-    if ( pos == 180 ) {
-      lDistance = getDistance();
-      delay(200);      
-    } else {
-      delay(3);
+    clDistance = getDistance();
+    if ( pos >= 90 ) { // when the robot head is pointing to the left
+      if ( clDistance < lDistance ) {
+        lDistance = clDistance;
+      }  
     }
   }
 }
 
 void headRight() {
+  rDistance = 1000000; //arbitrary big number
+  float crDistance = 1000000; //arbitrary big number
   for (pos = hAngle; pos >= 0; pos --) { 
     servo1.write(pos);              // tell servo to go to position in variable 'pos'    
     hAngle = pos;
-    if ( pos == 0 ) {
-      rDistance = getDistance();
-      delay(200);
-    } else {
-      delay(3);
-    }
+    crDistance = getDistance();
+    if ( pos < 90 ) { // when robot head is pointing to the right
+      if ( crDistance < rDistance ) {
+        rDistance = crDistance;
+      } 
+    }    
   }
 }
 
